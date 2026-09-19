@@ -10,6 +10,7 @@ import { LessonView } from './components/learn/LessonView';
 import { CodePlayground } from './components/practice/CodePlayground';
 import { QuizEngine } from './components/practice/QuizEngine';
 import { ChallengeRunner } from './components/practice/ChallengeRunner';
+import { InteractiveChallengeMode } from './components/practice/InteractiveChallengeMode';
 import { NotesDownloader } from './components/resources/NotesDownloader';
 import { GlossaryView } from './components/resources/GlossaryView';
 import { ProgressView } from './components/progress/ProgressView';
@@ -31,6 +32,7 @@ export function App() {
   const [selectedUnitId, setSelectedUnitId] = useState<number>(1);
   const [selectedLessonId, setSelectedLessonId] = useState<string>('u1-intro-adt');
   const [selectedVisualizerId, setSelectedVisualizerId] = useState<VisualizerId>('stack');
+  const [practiceTab, setPracticeTab] = useState<'interactive' | 'lab_tasks'>('interactive');
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
 
@@ -153,6 +155,7 @@ export function App() {
                 onLessonComplete={markLessonComplete}
                 isCompleted={progress.completedLessons.includes(activeLesson.id)}
                 onNextLesson={handleNextLesson}
+                onOpenVisualizer={(visId) => { setSelectedVisualizerId(visId); setCurrentView('lab'); }}
               />
             </div>
           )}
@@ -189,11 +192,41 @@ export function App() {
           )}
 
           {currentView === 'practice' && (
-            <ChallengeRunner
-              onOpenVisualizer={(visId) => { setSelectedVisualizerId(visId); setCurrentView('lab'); }}
-              onChallengeComplete={markChallengeComplete}
-              completedChallenges={progress.completedChallenges}
-            />
+            <div className="max-w-6xl mx-auto space-y-6">
+              {/* Practice Subtabs */}
+              <div className="flex items-center justify-center sm:justify-start gap-2 bg-slate-100/80 p-1 rounded-2xl max-w-fit border border-slate-200">
+                <button
+                  onClick={() => setPracticeTab('interactive')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    practiceTab === 'interactive'
+                      ? 'bg-white text-rose-600 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  ⚡ Algorithm Step Challenge Mode
+                </button>
+                <button
+                  onClick={() => setPracticeTab('lab_tasks')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    practiceTab === 'lab_tasks'
+                      ? 'bg-white text-rose-600 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🎯 Simulator Execution Tasks
+                </button>
+              </div>
+
+              {practiceTab === 'interactive' ? (
+                <InteractiveChallengeMode />
+              ) : (
+                <ChallengeRunner
+                  onOpenVisualizer={(visId) => { setSelectedVisualizerId(visId); setCurrentView('lab'); }}
+                  onChallengeComplete={markChallengeComplete}
+                  completedChallenges={progress.completedChallenges}
+                />
+              )}
+            </div>
           )}
 
           {currentView === 'quiz' && (

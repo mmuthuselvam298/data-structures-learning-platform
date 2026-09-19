@@ -4,6 +4,12 @@ DS Playground FastAPI Application Entrypoint
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api.router import router
+from backend.api.auth import router as auth_router
+from backend.api.user import router as user_router
+from backend.services.database import init_db
+
+# Initialize database schema on startup
+init_db()
 
 app = FastAPI(
     title="DS Playground — Interactive Simulation Engine",
@@ -20,6 +26,8 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(auth_router, prefix="/api")
+app.include_router(user_router, prefix="/api")
 
 @app.get("/")
 def health_check():

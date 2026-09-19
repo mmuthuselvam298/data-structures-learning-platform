@@ -31,13 +31,15 @@ interface LessonViewProps {
   onLessonComplete: (lessonId: string) => void;
   isCompleted: boolean;
   onNextLesson?: () => void;
+  onOpenVisualizer?: (visId: VisualizerId) => void;
 }
 
 export const LessonView: React.FC<LessonViewProps> = ({
   lesson,
   onLessonComplete,
   isCompleted,
-  onNextLesson
+  onNextLesson,
+  onOpenVisualizer
 }) => {
   const [showFullCode, setShowFullCode] = useState(false);
   const [selectedQuizAnswers, setSelectedQuizAnswers] = useState<Record<string, number>>({});
@@ -146,9 +148,20 @@ export const LessonView: React.FC<LessonViewProps> = ({
       {/* 5. INTERACTIVE VISUALIZATION PLAYGROUND */}
       {lesson.visualizerId && (
         <section className="space-y-4">
-          <div className="flex items-center gap-2 text-purple-600 font-bold text-xs uppercase tracking-wider px-2">
-            <Layers className="w-4 h-4" />
-            <span>4. Interactive Visual Playground</span>
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-2 text-purple-600 font-bold text-xs uppercase tracking-wider">
+              <Layers className="w-4 h-4" />
+              <span>4. Interactive Visual Playground</span>
+            </div>
+            {onOpenVisualizer && (
+              <button
+                onClick={() => onOpenVisualizer(lesson.visualizerId!)}
+                className="px-3.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5"
+              >
+                <span>Try {lesson.title.includes('Merge') ? 'Merge Sort' : 'this'} in Visual Lab</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
           {renderVisualizer(lesson.visualizerId)}
         </section>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { UserProgress } from '../types';
 import confetti from 'canvas-confetti';
+import { useAuth } from '../context/AuthContext';
 
 const STORAGE_KEY = 'ds_playground_user_progress_v1';
 
@@ -14,7 +15,16 @@ const defaultProgress: UserProgress = {
 };
 
 export function useProgress() {
-  const [progress, setProgress] = useState<UserProgress>(() => {
+  const {
+    user,
+    isAuthenticated,
+    completeLesson: authCompleteLesson,
+    submitChallenge: authSubmitChallenge,
+    submitQuiz: authSubmitQuiz,
+    progressData
+  } = useAuth();
+
+  const [localProgress, setLocalProgress] = useState<UserProgress>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) return JSON.parse(saved);
@@ -26,14 +36,28 @@ export function useProgress() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(localProgress));
     } catch {
       // ignore
     }
-  }, [progress]);
+  }, [localProgress]);
+
+  // Aggregate current progress whether authenticated or guest
+  const progress: UserProgress = {
+    completedLessons: isAuthenticated ? progressData.completedLessons : localProgress.completedLessons,
+    completedChallenges: isAuthenticated
+      ? progressData.challengeAttempts.map(a => a.challenge_id)
+      : localProgress.completedChallenges,
+    passedQuizzes: isAuthenticated
+      ? progressData.quizAttempts.map(q => q.quiz_id)
+      : localProgress.passedQuizzes,
+    xp: isAuthenticated && user ? user.xp : localProgress.xp,
+    streakDays: isAuthenticated && user ? user.streak : localProgress.streakDays,
+    unlockedBadges: isAuthenticated ? progressData.achievements : localProgress.unlockedBadges
+  };
 
   const addXP = (amount: number, reason?: string) => {
-    setProgress(prev => {
+    setLocalProgress(prev => {
       const newXP = prev.xp + amount;
       const badges = [...prev.unlockedBadges];
 
@@ -52,7 +76,6 @@ export function useProgress() {
       };
     });
 
-    // Trigger celebratory confetti
     try {
       confetti({
         particleCount: 50,
@@ -64,38 +87,50 @@ export function useProgress() {
     }
   };
 
-  const markLessonComplete = (lessonId: string) => {
-    if (!progress.completedLessons.includes(lessonId)) {
-      setProgress(prev => ({
-        ...prev,
-        completedLessons: [...prev.completedLessons, lessonId]
-      }));
-      addXP(40, "Lesson Completed");
+  const markLessonComplete = async (lessonId: string, unitId: string = 'unit1') => {
+    if (isAuthenticated) {
+      await authCompleteLesson(lessonId, unitId);
+    } else {
+      if (!localProgress.completedLessons.includes(lessonId)) {
+        setLocalProgress(prev => ({
+          ...prev,
+          completedLessons: [...prev.completedLessons, lessonId]
+        }));
+        addXP(40, "Lesson Completed");
+      }
     }
   };
 
-  const markChallengeComplete = (challengeId: string, xpReward: number = 50) => {
-    if (!progress.completedChallenges.includes(challengeId)) {
-      setProgress(prev => ({
-        ...prev,
-        completedChallenges: [...prev.completedChallenges, challengeId]
-      }));
-      addXP(xpReward, "Challenge Solved");
+  const markChallengeComplete = async (challengeId: string, xpReward: number = 50) => {
+    if (isAuthenticated) {
+      await authSubmitChallenge(challengeId, 'medium', 1, 1, 60, []);
+    } else {
+      if (!localProgress.completedChallenges.includes(challengeId)) {
+        setLocalProgress(prev => ({
+          ...prev,
+          completedChallenges: [...prev.completedChallenges, challengeId]
+        }));
+        addXP(xpReward, "Challenge Solved");
+      }
     }
   };
 
-  const markQuizPassed = (quizId: string) => {
-    if (!progress.passedQuizzes.includes(quizId)) {
-      setProgress(prev => ({
-        ...prev,
-        passedQuizzes: [...prev.passedQuizzes, quizId]
-      }));
-      addXP(30, "Quiz Question Mastered");
+  const markQuizPassed = async (quizId: string) => {
+    if (isAuthenticated) {
+      await authSubmitQuiz(quizId, 1, 1);
+    } else {
+      if (!localProgress.passedQuizzes.includes(quizId)) {
+        setLocalProgress(prev => ({
+          ...prev,
+          passedQuizzes: [...prev.passedQuizzes, quizId]
+        }));
+        addXP(30, "Quiz Question Mastered");
+      }
     }
   };
 
   const resetProgress = () => {
-    setProgress(defaultProgress);
+    setLocalProgress(defaultProgress);
     localStorage.removeItem(STORAGE_KEY);
   };
 

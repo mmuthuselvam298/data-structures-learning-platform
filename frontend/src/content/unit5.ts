@@ -202,6 +202,124 @@ int main() {
       ]
     },
     {
+      id: "u5-mergesort",
+      unitId: 5,
+      unitTitle: "Unit V: Divide & Conquer Sorting",
+      title: "Merge Sort: Divide, Conquer & Two-Pointer Merging",
+      shortDescription: "Complete recursive division hierarchy, two-pointer merge algorithm, guaranteed O(n log n) complexity, and recursion tree analysis.",
+      whatIsIt: "Merge Sort is an optimal, comparison-based, Divide-and-Conquer sorting algorithm that recursively halves the array until trivial 1-element subarrays remain, then merges adjacent sorted lists into larger sorted sequences.",
+      whyDoWeNeedIt: "Unlike Quick Sort which degrades to O(n²) in the worst case, Merge Sort guarantees strict O(n log n) performance regardless of whether the array is reverse-sorted, identical, or randomized. It is the gold standard for external sorting and linked lists.",
+      realWorldAnalogy: {
+        title: "Merging Two Sorted Decks of Cards",
+        description: "Imagine two face-up piles of cards, each already sorted from lowest to highest. You look only at the top two cards, pick the smaller one, and place it into the output pile. You repeat this until both piles are combined in perfect order!",
+        icon: "GitFork"
+      },
+      howDoesItWork: [
+        "DIVIDE: Find midpoint `mid = low + (high - low) / 2`. Recursively split `[low..high]` into `[low..mid]` and `[mid+1..high]`.",
+        "BASE CASE: When a subarray has 1 or 0 elements, it is already sorted by definition.",
+        "CONQUER / MERGE: Allocate temporary array `temp[]`. Use pointer `i` for left half and `j` for right half.",
+        "COMPARE: Pick `min(arr[i], arr[j])`, append to `temp[]`, and advance that pointer.",
+        "FLUSH: Copy any leftover elements from the non-empty half directly into `temp[]`.",
+        "COPY BACK: Overwrite `arr[low..high]` with the sorted contents of `temp[]`."
+      ],
+      visualizerId: "sorting",
+      operations: [
+        {
+          name: "Divide Phase (Splitting)",
+          description: "Calculates midpoint and recursively divides array into two halves.",
+          timeComplexity: "O(log n) tree depth",
+          cCodeSnippet: "void mergeSort(int arr[], int l, int r) {\n    if (l < r) {\n        int m = l + (r - l) / 2;\n        mergeSort(arr, l, m);\n        mergeSort(arr, m + 1, r);\n        merge(arr, l, m, r);\n    }\n}"
+        },
+        {
+          name: "Merge Phase (Two-Pointer Combine)",
+          description: "Combines two sorted sub-arrays into a single sorted range in linear time.",
+          timeComplexity: "O(n) per level",
+          cCodeSnippet: "void merge(int arr[], int l, int m, int r) {\n    int n1 = m - l + 1, n2 = r - m;\n    int L[n1], R[n2];\n    for (int i = 0; i < n1; i++) L[i] = arr[l + i];\n    for (int j = 0; j < n2; j++) R[j] = arr[m + 1 + j];\n    int i = 0, j = 0, k = l;\n    while (i < n1 && j < n2) {\n        if (L[i] <= R[j]) arr[k++] = L[i++];\n        else arr[k++] = R[j++];\n    }\n    while (i < n1) arr[k++] = L[i++];\n    while (j < n2) arr[k++] = R[j++];\n}"
+        }
+      ],
+      cImplementationFull: `#include <stdio.h>
+#include <stdlib.h>
+
+void merge(int arr[], int l, int m, int r) {
+    int n1 = m - l + 1;
+    int n2 = r - m;
+    int L[n1], R[n2];
+
+    for (int i = 0; i < n1; i++) L[i] = arr[l + i];
+    for (int j = 0; j < n2; j++) R[j] = arr[m + 1 + j];
+
+    int i = 0, j = 0, k = l;
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j]) arr[k++] = L[i++];
+        else arr[k++] = R[j++];
+    }
+    while (i < n1) arr[k++] = L[i++];
+    while (j < n2) arr[k++] = R[j++];
+}
+
+void mergeSort(int arr[], int l, int r) {
+    if (l < r) {
+        int m = l + (r - l) / 2;
+        mergeSort(arr, l, m);
+        mergeSort(arr, m + 1, r);
+        merge(arr, l, m, r);
+    }
+}
+
+int main() {
+    int arr[] = {38, 27, 43, 3, 9, 82, 10};
+    int n = sizeof(arr) / sizeof(arr[0]);
+    mergeSort(arr, 0, n - 1);
+    printf("Sorted array: ");
+    for (int i = 0; i < n; i++) printf("%d ", arr[i]);
+    printf("\\n");
+    return 0;
+}`,
+      complexity: {
+        timeBest: "O(n log n)",
+        timeAverage: "O(n log n)",
+        timeWorst: "O(n log n) - strictly guaranteed",
+        space: "O(n) auxiliary memory for buffer",
+        explanation: "The tree depth is log2(n). At each level of the tree, merging all elements takes O(n) operations. Total work = n * log2(n)."
+      },
+      commonMistakes: [
+        {
+          mistake: "Forgetting to copy remaining elements after one sub-array finishes",
+          whyItHappens: "When pointer i reaches n1, the loop terminates while elements remain in R[j..n2-1].",
+          solution: "Always include the two cleanup while loops: while (i < n1) and while (j < n2)."
+        },
+        {
+          mistake: "Calculating mid as (l + r) / 2 which can integer-overflow for very large indices",
+          whyItHappens: "Adding two large 32-bit signed ints can wrap to negative numbers.",
+          solution: "Use safe mid formula: mid = l + (r - l) / 2."
+        }
+      ],
+      quizzes: [
+        {
+          id: "q-u5-merge",
+          question: "Why is Merge Sort preferred over Quick Sort for sorting Linked Lists?",
+          type: "mcq",
+          options: [
+            "Linked lists do not provide O(1) random indexing needed by Quick Sort partition, while Merge Sort merges sequential nodes in O(1) extra space without shifting",
+            "Merge Sort is faster on arrays",
+            "Quick Sort requires more memory than Merge Sort on linked lists",
+            "Merge Sort does not use recursion"
+          ],
+          correctIndex: 0,
+          explanationWhy: "Linked list nodes can be spliced and merged in O(1) pointer operations without allocating auxiliary array buffers or requiring random array indexing.",
+          examSource: "SRM AP CSE-102 End Sem Prep"
+        }
+      ],
+      examQuestions: [
+        {
+          year: "End Sem CSE-102",
+          marks: 10,
+          question: "Explain the Divide-and-Conquer strategy of Merge Sort. Trace the execution of Merge Sort on array [38, 27, 43, 3, 9, 82, 10] showing the recursion tree and merge steps.",
+          solutionOutline: "Draw tree: [38,27,43,3,9,82,10] splits to [38,27,43] & [3,9,82,10]. Single elements reach [38],[27],[43] and [3],[9],[82],[10]. Merging yields [27,38,43] and [3,9,10,82]. Final merge combines both into [3,9,10,27,38,43,82]."
+        }
+      ]
+    },
+    {
       id: "u5-hashing",
       unitId: 5,
       unitTitle: "Unit V: Hashing Techniques",
